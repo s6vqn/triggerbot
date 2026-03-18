@@ -11,6 +11,8 @@ local Mouse = LocalPlayer:GetMouse()
 local Enabled = false
 local RightClickHeld = false
 
+local MyTeamColor = BrickColor.new("Neon green")
+
 Mouse.KeyDown:Connect(function(key)
     if key:lower() == Hotkey:lower() then
         Enabled = not Enabled
@@ -44,14 +46,10 @@ local function getCharacterModel(target)
     return nil
 end
 
-local function getTeamColor(model)
+local function getBodyColor(model)
     local bodyColors = model:FindFirstChildOfClass("BodyColors")
     if bodyColors then
         return bodyColors.HeadColor
-    end
-    local torso = model:FindFirstChild("Torso") or model:FindFirstChild("UpperTorso")
-    if torso and torso:IsA("BasePart") then
-        return torso.BrickColor
     end
     return nil
 end
@@ -61,19 +59,12 @@ local function isEnemy(model)
     local humanoid = model:FindFirstChild("Humanoid")
     if not humanoid or humanoid.Health <= 0 then return false end
     
-    local player = Players:GetPlayerFromCharacter(model)
-    if not player then return true end
-    
-    if player.Team ~= LocalPlayer.Team then return true end
-    if player.TeamColor ~= LocalPlayer.TeamColor then return true end
-    
-    local myTeamColor = getTeamColor(LocalPlayer.Character)
-    local targetTeamColor = getTeamColor(model)
-    if myTeamColor and targetTeamColor then
-        if myTeamColor ~= targetTeamColor then return true end
+    local bodyColor = getBodyColor(model)
+    if bodyColor == MyTeamColor then
+        return false
     end
     
-    return false
+    return true
 end
 
 RunService.RenderStepped:Connect(function()
