@@ -44,17 +44,36 @@ local function getCharacterModel(target)
     return nil
 end
 
-local function canShoot(model)
+local function getTeamColor(model)
+    local bodyColors = model:FindFirstChildOfClass("BodyColors")
+    if bodyColors then
+        return bodyColors.HeadColor
+    end
+    local torso = model:FindFirstChild("Torso") or model:FindFirstChild("UpperTorso")
+    if torso and torso:IsA("BasePart") then
+        return torso.BrickColor
+    end
+    return nil
+end
+
+local function isEnemy(model)
     if not model then return false end
     local humanoid = model:FindFirstChild("Humanoid")
     if not humanoid or humanoid.Health <= 0 then return false end
     
     local player = Players:GetPlayerFromCharacter(model)
-    if player then
-        if player.Team == LocalPlayer.Team then return false end
+    if not player then return true end
+    
+    if player.Team ~= LocalPlayer.Team then return true end
+    if player.TeamColor ~= LocalPlayer.TeamColor then return true end
+    
+    local myTeamColor = getTeamColor(LocalPlayer.Character)
+    local targetTeamColor = getTeamColor(model)
+    if myTeamColor and targetTeamColor then
+        if myTeamColor ~= targetTeamColor then return true end
     end
     
-    return true
+    return false
 end
 
 RunService.RenderStepped:Connect(function()
@@ -62,7 +81,7 @@ RunService.RenderStepped:Connect(function()
         local target = Mouse.Target
         local model = getCharacterModel(target)
         
-        if canShoot(model) then
+        if isEnemy(model) then
             mouse1click()
         end
     end
