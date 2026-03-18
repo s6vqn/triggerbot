@@ -59,12 +59,8 @@ local function isValidTarget(model)
     
     local targetPlayer = Players:GetPlayerFromCharacter(model)
     if targetPlayer then
-        if targetPlayer.Team == LocalPlayer.Team then
-            return false
-        end
-        if targetPlayer.TeamColor == LocalPlayer.TeamColor then
-            return false
-        end
+        if targetPlayer.Team == LocalPlayer.Team then return false end
+        if targetPlayer.TeamColor == LocalPlayer.TeamColor then return false end
     end
     
     return true
