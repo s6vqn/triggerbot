@@ -1,7 +1,4 @@
--- Settings
-local Hotkey = "t"
-local HotkeyToggle = true
-
+-- Debug on Screen
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -12,10 +9,26 @@ local Mouse = LocalPlayer:GetMouse()
 local Enabled = false
 local RightClickHeld = false
 
+local gui = Instance.new("ScreenGui")
+gui.Parent = game.CoreGui
+
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(0, 300, 0, 200)
+label.Position = UDim2.new(0, 10, 0, 10)
+label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+label.BackgroundTransparency = 0.5
+label.TextColor3 = Color3.fromRGB(0, 255, 0)
+label.Font = Enum.Font.Code
+label.TextSize = 14
+label.TextXAlignment = Enum.TextXAlignment.Left
+label.TextYAlignment = Enum.TextYAlignment.Top
+label.Text = "Press T to enable"
+label.Parent = gui
+
 Mouse.KeyDown:Connect(function(key)
-    if key:lower() == Hotkey:lower() then
+    if key:lower() == "t" then
         Enabled = not Enabled
-        print("Autotrigger:", Enabled and "ON" or "OFF")
+        label.Text = Enabled and "ENABLED - Aim at target" or "DISABLED"
     end
 end)
 
@@ -36,14 +49,33 @@ RunService.RenderStepped:Connect(function()
         local target = Mouse.Target
         if target then
             local model = target.Parent
-            if model and model:FindFirstChild("Humanoid") and model.Humanoid.Health > 0 then
+            if model and model:FindFirstChild("Humanoid") then
+                local humanoid = model.Humanoid
                 local player = Players:GetPlayerFromCharacter(model)
-                if not player or player.Team ~= LocalPlayer.Team then
-                    mouse1click()
+                
+                local txt = "TARGET: " .. model.Name .. "\n"
+                txt = txt .. "Health: " .. humanoid.Health .. "\n"
+                txt = txt .. "Is Player: " .. (player ~= nil) .. "\n"
+                if player then
+                    txt = txt .. "Team: " .. tostring(player.Team) .. "\n"
+                    txt = txt .. "Same Team: " .. (player.Team == LocalPlayer.Team) .. "\n"
                 end
+                
+                if humanoid.Health > 0 and (not player or player.Team ~= LocalPlayer.Team) then
+                    txt = txt .. "\n>>> SHOOTING!"
+                    mouse1click()
+                else
+                    txt = txt .. "\n>>> NOT SHOOTING"
+                end
+                
+                label.Text = txt
+            else
+                label.Text = "No Humanoid target"
             end
+        else
+            label.Text = "No target"
         end
     end
 end)
 
-print("Script loaded! Press T to toggle, hold right click to shoot.")
+print("Debug script loaded!")
