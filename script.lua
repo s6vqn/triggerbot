@@ -51,16 +51,11 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
     end
 end)
 
-local function isRealPlayer(model)
+local function isClassicAvatar(model)
     local humanoid = model:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return false end
-    
-    local rootPart = model:FindFirstChild("HumanoidRootPart")
-    if rootPart then
-        local player = Players:GetPlayerFromCharacter(model)
-        return player ~= nil
+    if humanoid and humanoid.RigType == Enum.HumanoidRigType.R6 then
+        return true
     end
-    
     return false
 end
 
@@ -70,7 +65,7 @@ RunService.RenderStepped:Connect(function()
             local TargetModel = Mouse.Target.Parent
             local Humanoid = TargetModel:FindFirstChild("Humanoid")
             
-            if Humanoid and Humanoid.Health > 0 and not isRealPlayer(TargetModel) then
+            if Humanoid and Humanoid.Health > 0 and isClassicAvatar(TargetModel) then
                 if HoldClick then
                     if not CurrentlyPressed then
                         CurrentlyPressed = true
