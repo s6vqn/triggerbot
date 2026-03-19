@@ -35,6 +35,24 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
+-- Wall Check (Anti-Wallbang)
+local function isTargetVisible(targetPosition)
+    local origin = Camera.CFrame.Position
+    local ray = Ray.new(origin, (targetPosition - origin).Unit * 1500)
+    local hit, pos = Workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character}, false, true)
+    
+    if hit then
+        local distToHit = (pos - origin).Magnitude
+        local distToTarget = (targetPosition - origin).Magnitude
+        
+        if distToHit < distToTarget - 1 then
+            return false
+        end
+    end
+    
+    return true
+end
+
 -- Main Loop
 RunService.RenderStepped:Connect(function()
     if Enabled and RightClickHeld then
@@ -45,17 +63,21 @@ RunService.RenderStepped:Connect(function()
             params.FilterDescendantsInstances = {LocalPlayer.Character}
         end
         
-        local result = Workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
+        local result = Workspace:Raycast(ray.Origin, ray.Direction * 1500, params)
         
         if result then
-            local model = result.Instance
+            local targetPart = result.Instance
+            local targetPos = result.Position
+            
             for i = 1, 10 do
-                if model and model:FindFirstChildOfClass("Humanoid") then
-                    mouse1click()
+                if targetPart and targetPart:FindFirstChildOfClass("Humanoid") then
+                    if isTargetVisible(targetPos) then
+                        mouse1click()
+                    end
                     break
                 end
-                if model then
-                    model = model.Parent
+                if targetPart then
+                    targetPart = targetPart.Parent
                 end
             end
         end
