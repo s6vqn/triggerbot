@@ -14,7 +14,7 @@ local Camera = Workspace.CurrentCamera
 local Enabled = false
 local RightClickHeld = false
 local LastShot = 0
-local MinDistance = 10
+local MinDistance = 20
 
 -- Hotkey Toggle
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -73,7 +73,6 @@ end
 local function isTooClose(targetPosition)
     local origin = Camera.CFrame.Position
     local distance = (targetPosition - origin).Magnitude
-    print("Distance:", distance)
     return distance < MinDistance
 end
 
