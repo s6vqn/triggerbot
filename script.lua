@@ -15,7 +15,7 @@ local Enabled = false
 local RightClickHeld = false
 local LastShot = 0
 local MinRange = 100
-local MaxRange = 30
+local MaxRange = 22
 
 -- Hotkey Toggle
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -126,4 +126,4 @@ end)
 
 print("Autotrigger loaded! Press T to toggle, hold right click to shoot.")
 print("Only works when enemy is FAR (>100 studs)")
-print("Won't work when enemy is CLOSE (<30 studs)")
+print("Won't work when enemy is CLOSE (<22 studs)")
