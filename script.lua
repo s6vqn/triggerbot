@@ -1,232 +1,100 @@
-run_on_thread(getactorthreads()[1], [=[
--- Services
-local function GetService(Name)
-    return cloneref(game.GetService(game, Name));
+local Camera = workspace.CurrentCamera
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Holding = false
+
+_G.AimbotEnabled = true
+_G.TeamCheck = false -- If set to true then the script would only lock your aim at enemy team members.
+_G.AimPart = "Head" -- Where the aimbot script would lock at.
+_G.Sensitivity = 0 -- How many seconds it takes for the aimbot script to officially lock onto the target's aimpart.
+
+_G.CircleSides = 64 -- How many sides the FOV circle would have.
+_G.CircleColor = Color3.fromRGB(255, 255, 255) -- (RGB) Color that the FOV circle would appear as.
+_G.CircleTransparency = 0.7 -- Transparency of the circle.
+_G.CircleRadius = 80 -- The radius of the circle / FOV.
+_G.CircleFilled = false -- Determines whether or not the circle is filled.
+_G.CircleVisible = true -- Determines whether or not the circle is visible.
+_G.CircleThickness = 0 -- The thickness of the circle.
+
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+FOVCircle.Radius = _G.CircleRadius
+FOVCircle.Filled = _G.CircleFilled
+FOVCircle.Color = _G.CircleColor
+FOVCircle.Visible = _G.CircleVisible
+FOVCircle.Radius = _G.CircleRadius
+FOVCircle.Transparency = _G.CircleTransparency
+FOVCircle.NumSides = _G.CircleSides
+FOVCircle.Thickness = _G.CircleThickness
+
+local function GetClosestPlayer()
+	local MaximumDistance = _G.CircleRadius
+	local Target = nil
+
+	for _, v in next, Players:GetPlayers() do
+		if v.Name ~= LocalPlayer.Name then
+			if _G.TeamCheck == true then
+				if v.Team ~= LocalPlayer.Team then
+					if v.Character ~= nil then
+						if v.Character:FindFirstChild("HumanoidRootPart") ~= nil then
+							if v.Character:FindFirstChild("Humanoid") ~= nil and v.Character:FindFirstChild("Humanoid").Health ~= 0 then
+								local ScreenPoint = Camera:WorldToScreenPoint(v.Character:WaitForChild("HumanoidRootPart", math.huge).Position)
+								local VectorDistance = (Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2.new(ScreenPoint.X, ScreenPoint.Y)).Magnitude
+								
+								if VectorDistance < MaximumDistance then
+									Target = v
+								end
+							end
+						end
+					end
+				end
+			else
+				if v.Character ~= nil then
+					if v.Character:FindFirstChild("HumanoidRootPart") ~= nil then
+						if v.Character:FindFirstChild("Humanoid") ~= nil and v.Character:FindFirstChild("Humanoid").Health ~= 0 then
+							local ScreenPoint = Camera:WorldToScreenPoint(v.Character:WaitForChild("HumanoidRootPart", math.huge).Position)
+							local VectorDistance = (Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2.new(ScreenPoint.X, ScreenPoint.Y)).Magnitude
+							
+							if VectorDistance < MaximumDistance then
+								Target = v
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	return Target
 end
 
-local PlayerService = GetService("Players");
-local Workspace = GetService("Workspace");
-local UserInputService = GetService("UserInputService");
-local RunService = GetService("RunService");
-
--- Variables
-local Camera = Workspace.CurrentCamera;
-local LocalPlayer = PlayerService.LocalPlayer;
-
-local ToggleEnabled = false
-local RightClickHeld = false
-
--- T Key Toggle
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == Enum.KeyCode.T then
-        ToggleEnabled = not ToggleEnabled
-        print("Aim Assist:", ToggleEnabled and "ON" or "OFF")
+UserInputService.InputBegan:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton2 then
+        Holding = true
     end
 end)
 
--- Right Click Detection
-UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        RightClickHeld = true
+UserInputService.InputEnded:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton2 then
+        Holding = false
     end
 end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        RightClickHeld = false
-    end
-end)
-
--- Functions
-local Modules = { }; do
-    local Required = { };
-    local RequestedModules = {
-        ["firstPerson"] = {
-            ["1"] = "cam",
-            ["2"] = "signals",
-            ["3"] = "nodes",
-            ["4"] = "chars",
-            ["5"] = "collisionCheck",
-            ["6"] = "firstPersonCam",
-            ["7"] = "localChar",
-            ["8"] = "breath",
-            ["9"] = "charConfig",
-            ["10"] = "equipment",
-            ["11"] = "players",
-            ["12"] = "mouse",
-            ["13"] = "networkEvents",
-            ["14"] = "gamepad",
-            ["15"] = "mathLib",
-        },
-
-        ["bullet"] = {
-            ["2"] = "charData"
-        },
-    };
-
-    function Modules:Require(Name)
-        local NilInstances = getnilinstances();
-
-        for Index = 1, #NilInstances do
-            local Module = NilInstances[Index];
-    
-            if (Module.Name == Name) then
-                return require(Module);
-            end
-        end
-    
-        return warn(`Could not require {Name}`);
-    end
-
-    function Modules:Get(Module)
-        local RequiredModule = Required[Module];
-
-        if (not RequiredModule) then
-            RequiredModule = self:Require(Module);
-        end
-
-        return RequiredModule;
-    end
-
-    function Modules:Initiate()
-        for Module, Data in RequestedModules do
-            local Initiator = self:Require(Module);
-
-            if (not Initiator) then
-                continue;
-            end
-
-            Initiator = Initiator.setup;
-
-            for Index, Name in Data do
-                Required[Name] = debug.getupvalue(Initiator, Index);
-            end
-        end
-    end
-    
-    Modules:Initiate();
-end
-
-local Targets = { }; do
-    local Characters = Modules:Get("chars");
-
-    function Targets:GetTargets()
-        local TargetObjects = { };
-    
-        for PlayerName, Data in Characters do
-            local Player = PlayerService:FindFirstChild(PlayerName);
-
-            if (not Player) then
-                continue;
-            end
-
-            local Character = Data.bodyModel;
-
-            if (not Character) or (Player == LocalPlayer) or (Player.Team == LocalPlayer.Team) then
-                continue;
-            end
-
-            TargetObjects[Player] = Character;
-        end
-
-        local Ragdolls = Workspace:FindFirstChild("Ragdolls")
-        if Ragdolls then
-            for _, Dummy in ipairs(Ragdolls:GetChildren()) do
-                if Dummy:IsA("Model") and Dummy:FindFirstChildOfClass("Humanoid") then
-                    local bodyModel = Dummy:FindFirstChild("body") or Dummy
-                    TargetObjects[Dummy] = bodyModel;
-                end
-            end
-        end
-
-        return TargetObjects;
-    end
-
-    function Targets:GetClosestTarget(Range)
-        local Closest, ClosestDistance = nil, Range;
-
-        for Target, Character in self:GetTargets() do
-            local Root = Character:FindFirstChild("root") or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso");
-
-            if (not Root) then
-                continue;
-            end
-            
-            local ScreenPosition, OnScreen = Camera:WorldToViewportPoint(Root.Position);
-
-            if (not OnScreen) then
-                continue;
-            end
-
-            local Distance = (Vector2.new(ScreenPosition.X, ScreenPosition.Y) - Camera.ViewportSize / 2).Magnitude;
-
-            if (Distance <= ClosestDistance) then
-                Closest = Character;
-                ClosestDistance = Distance;
-            end
-        end
-
-        return Closest;
-    end
-
-    function Targets:GetTargetPart(Character)
-        local part = Character:FindFirstChild("head")
-        if part and part:IsA("BasePart") then
-            return part
-        end
-        return Character:FindFirstChild("HumanoidRootPart")
-    end
-end
-
--- Soft Aimbot Settings
-local SMOOTHNESS = 0.08
 
 RunService.RenderStepped:Connect(function()
-    if not ToggleEnabled or not RightClickHeld then return end
-    
-    local ClosestTarget = Targets:GetClosestTarget(300)
-    
-    if ClosestTarget then
-        local Part = Targets:GetTargetPart(ClosestTarget)
-        if Part then
-            local ScreenPos = Camera:WorldToViewportPoint(Part.Position)
-            local Center = Camera.ViewportSize / 2
-            
-            local TargetScreenPos = Vector2.new(ScreenPos.X, ScreenPos.Y)
-            local CurrentScreenPos = Vector2.new(Center.X, Center.Y)
-            
-            local Delta = TargetScreenPos - CurrentScreenPos
-            local SmoothDelta = Delta * SMOOTHNESS
-            
-            local Mouse = LocalPlayer:GetMouse()
-            Mouse.X = Mouse.X + SmoothDelta.X
-            Mouse.Y = Mouse.Y + SmoothDelta.Y
-        end
+    FOVCircle.Position = Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
+    FOVCircle.Radius = _G.CircleRadius
+    FOVCircle.Filled = _G.CircleFilled
+    FOVCircle.Color = _G.CircleColor
+    FOVCircle.Visible = _G.CircleVisible
+    FOVCircle.Radius = _G.CircleRadius
+    FOVCircle.Transparency = _G.CircleTransparency
+    FOVCircle.NumSides = _G.CircleSides
+    FOVCircle.Thickness = _G.CircleThickness
+
+    if Holding == true and _G.AimbotEnabled == true then
+        TweenService:Create(Camera, TweenInfo.new(_G.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFrame.new(Camera.CFrame.Position, GetClosestPlayer().Character[_G.AimPart].Position)}):Play()
     end
 end)
-
--- Modules
-local Signals = Modules:Get("signals");
-
--- Hooks
-do
-    FireEvent = hookfunction(Signals.fire, function(...)
-        local Arguments = { ... };
-
-        if (Arguments[2] == "CoreGui") then
-            return print("dementia! :steamhappy:");
-        end
-    
-        return FireEvent(table.unpack(Arguments));
-    end)
-
-    InvokeEvent = hookfunction(Signals.invoke, function(...)
-        local Arguments = { ... };
-        return InvokeEvent(table.unpack(Arguments));
-    end)
-end
-
-print("Soft Aimbot loaded!")
-print("Press T to toggle")
-print("Hold right click to aim")
-]=])
