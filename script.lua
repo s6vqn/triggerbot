@@ -14,7 +14,7 @@ local Camera = Workspace.CurrentCamera
 local Enabled = false
 local RightClickHeld = false
 local LastShot = 0
-local Delay = 0.17
+local Delay = 0.14
 
 -- Hotkey Toggle
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -98,3 +98,5 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
+print("Autotrigger loaded! Press T to toggle, hold right click to shoot.")
